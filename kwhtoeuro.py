@@ -12,7 +12,7 @@ dbname = config.get('config', 'dbname')
 client = InfluxDBClient(host, 8086, user, password, dbname)
 
 def strom(data):
-    euro = data*0.3730
+    euro = data*0.4
     return euro
 
 def read():
@@ -34,10 +34,32 @@ def write(data):
     else:
         print("Daten konnten nicht gesendet werden.")
         
+def shelly():
+    data = client.query('SELECT sum("mean")/3600/1000 FROM (SELECT mean("total_act_power") FROM "energy" GROUP BY time(1s) fill(previous))')
+    data = data.raw
+    data = data["series"]
+    data = data[0]
+    data = data["values"]
+    data = data[0]
+    data = data[1]
+    euro = strom(data)
+    write_data = {}
+    write_data['measurement'] = 'euro'
+    write_data['fields'] = {"euro_gesamtWG": euro}
+    client.write_points([write_data])    
+    write_data = {}
+    write_data['measurement'] = 'euro'
+    write_data['fields'] = {"Verbrauch_gesamtWG": data}
+    if client.write_points([write_data]):
+        return
+    else:
+        print("Daten konnten nicht gesendet werden.") 
         
 if __name__ == '__main__':
     while True:
         data = read()
         euro = strom(data)
         write(euro)
+        shelly()
+        print("Daten wurden gesendet.")
         sleep(60)

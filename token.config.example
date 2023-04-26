@@ -1,6 +1,5 @@
 [config]
-token = enter token code here
 host = host
-user = root
-password = root
+user = user
+password = password
 dbname = example
