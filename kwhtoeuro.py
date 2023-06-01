@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from influxdb import InfluxDBClient
 from time import sleep
 import configparser
@@ -15,27 +17,8 @@ def strom(data):
     euro = data*0.4
     return euro
 
-def read():
-    data = client.query('SELECT "import_energy_active" FROM "energy" GROUP BY * ORDER BY DESC LIMIT 1')
-    data = data.raw
-    data = data["series"]
-    data = data[0]
-    data = data["values"]
-    data = data[0]
-    data = data[1]
-    return data
-
-def write(data):
-    write_data = {}
-    write_data['measurement'] = 'euro'
-    write_data['fields'] = {"euro": data}
-    if client.write_points([write_data]):
-        return
-    else:
-        print("Daten konnten nicht gesendet werden.")
-        
 def shelly():
-    data = client.query('SELECT sum("mean")/3600/1000 FROM (SELECT mean("total_act_power") FROM "energy" GROUP BY time(1s) fill(previous))')
+    data = client.query('SELECT sum("mean")/3600/1000 FROM (SELECT mean("total_act_power") FROM "shelly" GROUP BY time(1s) fill(previous))')
     data = data.raw
     data = data["series"]
     data = data[0]
@@ -54,12 +37,9 @@ def shelly():
         return
     else:
         print("Daten konnten nicht gesendet werden.") 
-        
+
 if __name__ == '__main__':
     while True:
-        data = read()
-        euro = strom(data)
-        write(euro)
         shelly()
         print("Daten wurden gesendet.")
         sleep(60)
